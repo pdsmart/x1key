@@ -1,0 +1,7 @@
+-finfo
+-O"D:\Renesas\mz25key\Release"
+-LM
+-.
+-D__R8C__=1
+-R8C
+"D:\Renesas\mz25key\ncrt0.a30"

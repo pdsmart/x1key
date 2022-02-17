@@ -1,0 +1,186 @@
+/*
+    Connect a PS / 2 keyboard to SHARP X1
+    PS / 2 keyboard reception processing
+    
+    It's easy because you only read one bit at a time at the falling edge of the clock.
+    Start bit 1
+    Data bit 8
+    Parity bit 1
+    Stop bit 1
+
+    11-bit odd parity in total
+    I wrote the key code sent to me at http://kyoutan.jpn.org/uts/pc/pic/x68key/.
+
+
+
+    Created July 22, 2014
+
+    Kyoichi Sato http://kyoutan.jpn.org/
+
+    There is no guarantee.
+    The part created by Kyoichi Sato has no restrictions on its use. You can use it freely regardless of whether it is commercial or non-commercial.
+    It means that you can copy, modify, distribute, or sell it without permission.
+    No need to contact.
+*/
+
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
+#include "sfr_r8m12a.h"
+#include "ps2.h"
+#include "iodefine.h"
+
+volatile unsigned short PS2TIMER = 0;         // PS2 receive timeout timer
+volatile unsigned char PS2BUFF [PS2BUFFSIZE]; // PS2 receive buffer
+volatile unsigned char PS2RPOS = 0;           // PS2 read position
+volatile unsigned char PS2WPOS = 0;           // PS2 write position
+
+void ps2key_init(void)
+{
+    /* INT0 External interrupt initialization */
+    // INT0 PS / 2 CLOCK
+    intf0 = 0b00000001; // Use INT0 f1 filter 1 * 3 / 18.432 = 0.16us
+    iscr0 = 0b00000000; // INT0 Falling edge
+    inten = 0b00000001; // INT0 input permission
+    {
+        unsigned char a;
+        for (a = (6 * 8); a != 0; a--) asm ("nop"); // Wait a minute
+    }
+    // PMLi PMHi ISCR0 INTEN KIEN Rewriting the register may set the interrupt request flag to 1.
+    // is written in the manual, so clear the flag
+    while (1 == iri0) iri0 = 0;
+}
+
+// External interrupt INT0
+// Interrupt at the fall of PS / 2 CLOCK and capture data bit by bit
+#pragma INTERRUPT INT_int0 (vect = 29)
+void INT_int0(void)
+{
+    static unsigned short bit = 1;
+    static unsigned short data = 0;
+    static unsigned char parity = 0;
+
+    // If the reception is stopped, clear the status and receive from the beginning
+    if ((bit != 1) && (PS2TIMEOUT <PS2TIMER))
+    {
+        bit = 1;
+        data = 0;
+        parity = 0;
+    }
+
+    // Receive one bit at a time from the lower bits
+    if (0 != PS2DATA)
+    {
+        // 1
+        data += bit;
+        parity ++;
+        LED  = ON;
+    }
+
+    if (0b100_0000_0000 == bit) // 11bit read (start bit 1 data bit 8 parity 1 stop 1)
+    {
+        parity--; // Subtract the stop bit
+        if (0 != (parity & 1)) // Normal if parity check 1 is odd
+        {
+            // Normal reception
+            if ((PS2BUFFSIZE-1)> ps2size ()) // Is there a free buffer?
+            {
+                PS2BUFF [PS2WPOS] = ((data >> 1) & 0xFF);
+
+                if ((PS2BUFFSIZE-1)> PS2WPOS)
+                {
+                    PS2WPOS++;
+                }
+                else
+                {
+                    PS2WPOS = 0;
+                }
+            }
+            else
+            {
+                // Buffer full
+            }
+        }
+        else
+        {
+            // Parity error
+        }
+
+        bit = 1;
+        data = 0;
+        parity = 0;
+        LED  = OFF;
+    }
+    else
+    {
+        if ((1 == bit) && (data != 0))
+        {// start bit is not zero state reset
+            bit = 1;
+            data = 0;
+            parity = 0;
+        }
+        else
+        {// Ready to read the next bit
+            bit = (bit << 1);
+            PS2TIMER = 0; // Clear timeout timer
+        }
+    }
+
+    while (1 == iri0) iri0 = 0; // The interrupt flag is automatically cleared, so you don't have to do this line.
+}
+
+// Returns the number of valid data in the buffer
+unsigned char ps2size(void)
+{
+signed int size;
+
+    size = (signed int) PS2WPOS-PS2RPOS;
+    if (0> size)
+    {
+        size = PS2BUFFSIZE + size;
+    }
+
+    return size;
+    // size = 5 wpos = 2 rpos = 3 4
+}
+
+// Clear the receive buffer
+void ps2clear (void)
+{
+    PS2WPOS = 0;
+    PS2RPOS = 0;
+    PS2BUFF [PS2RPOS] = 0;
+}
+
+// Read 1 byte from the buffer
+unsigned char ps2read(void)
+{
+    unsigned char data = 0;
+
+    if (PS2WPOS != PS2RPOS) // Is there data in the buffer?
+    {
+        data = PS2BUFF [PS2RPOS];
+
+        if ((PS2BUFFSIZE-1)> PS2RPOS)
+        {
+            PS2RPOS++;
+        }
+        else
+        {
+            PS2RPOS = 0;
+        }
+    }
+    return data;
+}
+
+// Wait until it is received and read 1 byte
+unsigned char ps2get(void)
+{
+    while (0 == ps2size ()); // Wait until the buffer is filled with data
+    return ps2read ();
+}
+
+#ifdef __cplusplus
+}
+#endif

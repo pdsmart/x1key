@@ -1,0 +1,10 @@
+-lang=c
+-D__UART0__
+-c
+-finfo
+-dir "D:\Renesas\mz25key\Release"
+-O5
+-OR
+-silent
+-R8C
+"D:\Renesas\mz25key\keyconv.c"

@@ -1,0 +1,61 @@
+[ColorGroups]
+Group1=Text
+Group2=Text Selection
+Group3=Line Comment
+Group4=Block Comment
+NumGroups=4
+
+[Text]
+Foreground=0,0,0
+ForeColorAutomatic=0
+Background=255,255,255
+BackColorAutomatic=0
+DisplayName=Text
+Configurable=1
+
+[Text Selection]
+Foreground=255,255,255
+ForeColorAutomatic=0
+Background=0,0,0
+BackColorAutomatic=0
+DisplayName=Text Selection
+Configurable=1
+
+[Line Comment]
+Foreground=0,0,0
+ForeColorAutomatic=0
+Background=255,255,255
+BackColorAutomatic=0
+DisplayName=Line Comment
+Configurable=1
+
+[Block Comment]
+Foreground=0,0,0
+ForeColorAutomatic=0
+Background=255,255,255
+BackColorAutomatic=0
+DisplayName=Block Comment
+Configurable=1
+
+[Keywords]
+[Parser]
+Operators=
+Delimiters = !"#$%&'()*+,-./:;<=>?@[\]^`{|}~
+KWStartChars=
+KWMiddleChars=
+KWEndChars=
+NumTags=1
+
+[Tag1]
+ColorGroup=String
+BeginTag="
+EndTag="
+MultiLine=0
+Escapechar=\
+
+[Editor]
+ShowWhitespace=0
+VirtualWhitespace=0
+VirtualWhitespace=0
+MatchCase=1
+
