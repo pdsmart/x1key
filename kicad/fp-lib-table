@@ -1,0 +1,5 @@
+(fp_lib_table
+  (lib (name "r_mini_din")(type "Legacy")(uri "${KIPRJMOD}/Custom.pretty/r_mini_din.mod")(options "")(descr ""))
+  (lib (name "Custom")(type "KiCad")(uri "${KIPRJMOD}/Custom.pretty")(options "")(descr ""))
+  (lib (name "Graphic")(type "KiCad")(uri "${KIPRJMOD}/Graphic.pretty")(options "")(descr ""))
+)
